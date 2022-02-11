@@ -7,6 +7,10 @@ using System.Text;
 using Entities.DTos;
 using Core.Utilities.Results;
 using Business.Constants;
+using FluentValidation;
+using Business.ValidationRules.FluentValidation;
+using Core.CrossCuttingConcerns.Validation;
+using Core.Aspects.Autofac.Validation;
 
 namespace Business.Concrete
 {
@@ -19,13 +23,11 @@ namespace Business.Concrete
             _productDal = productDal;
         }
 
+        [ValidationAspect(typeof(ProductValidator))]
         public IResult Add(Product product)
         {
-            //business codes 
-            if (product.ProductName.Length < 2)
-            {
-                return new ErrorResult(Messages.NameInvalid);
-            }
+            //business codes
+
             _productDal.Add(product);
             return new SuccessResult(Messages.Added);
         }

@@ -13,6 +13,10 @@ using Core.CrossCuttingConcerns.Validation;
 using Core.Aspects.Autofac.Validation;
 using System.Linq;
 using Core.Utilities.Business;
+using Business.BusinessAspects.AutoFac;
+using Core.Aspects.Autofac.Caching;
+using Core.Aspects.Autofac.Transaction;
+using Core.Aspects.Autofac.Performance;
 
 namespace Business.Concrete
 {
@@ -27,7 +31,9 @@ namespace Business.Concrete
             _categoryService = categoryService;
         }
 
+        [SecuredOperation("Product.List,Admin")]
         [ValidationAspect(typeof(ProductValidator))]
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Add(Product product)
         {
             //business codes
@@ -41,7 +47,7 @@ namespace Business.Concrete
             return new SuccessResult(Messages.Added);
             
         }
-
+        [CacheAspect]
         public IDataResult<List<Product>> GetAll()
         {
             //İş kodları
@@ -58,7 +64,8 @@ namespace Business.Concrete
         {
             return new SuccessDataResult<List<Product>>(_productDal.GetAll(p => p.CategoryId == id));
         }
-
+        [CacheAspect]
+        [PerformanceAspect(5)]
         public IDataResult<Product> GetById(int productId)
         {
             return new SuccessDataResult<Product>(_productDal.Get(p => p.ProductId == productId));
@@ -75,6 +82,7 @@ namespace Business.Concrete
         }
 
         [ValidationAspect(typeof(ProductValidator))]
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Update(Product product)
         {
             var result = _productDal.GetAll(p => p.CategoryId == product.CategoryId).Count;
@@ -113,7 +121,13 @@ namespace Business.Concrete
             }
             return new SuccessResult();
         }
-
-
+       
+        [TransactionScopeAspect]
+        public IResult AddTransactioanlTest(Product product)
+        {
+            _productDal.Update(product);
+            _productDal.Add(product);
+            return new SuccessResult(Messages.Updated);
+        }
     }
 }
